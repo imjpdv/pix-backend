@@ -1,31 +1,52 @@
 import express from "express";
 import cors from "cors";
+import sqlite3 from "sqlite3";
+import { open } from "sqlite";
 
-import pixRoutes from "./src/routes/pix.routes.js";
+import createPixRoutes from "./src/routes/pix.routes.js";
 
 const app = express();
 
-// 🔓 CORS LIBERADO (IMPORTANTE para Base44)
+// 🔓 CORS
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"]
 }));
 
-// 🧠 Middleware JSON
 app.use(express.json());
 
-// 📦 Rotas Pix
-app.use("/pix", pixRoutes);
-
-// ❤️ Health check
-app.get("/", (req, res) => {
-  res.send("API PIX ONLINE");
-});
-
-// 🚀 Start servidor (IMPORTANTE: 0.0.0.0)
 const PORT = 3000;
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
-});
+// 🔥 INICIAR SERVIDOR COM DB
+async function startServer() {
+  const db = await open({
+    filename: "./database.sqlite",
+    driver: sqlite3.Database
+  });
+
+  // cria tabela se não existir
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS pagamentos (
+      id TEXT PRIMARY KEY,
+      valor REAL,
+      descricao TEXT,
+      status TEXT,
+      criado_em TEXT,
+      pago_em TEXT
+    );
+  `);
+
+  // rotas
+  app.use("/pix", createPixRoutes(db));
+
+  app.get("/", (req, res) => {
+    res.send("API PIX ONLINE");
+  });
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  });
+}
+
+startServer();
