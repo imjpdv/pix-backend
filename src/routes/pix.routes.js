@@ -3,14 +3,12 @@ import {
   createPixController,
   getPixStatusController
 } from "../controllers/pix.controller.js";
-import { mercadoPagoWebhook } from "../webhooks/mercadoPago.webhook.js";
 
-export default function createPixRoutes(db) {
+export default function createPixRoutes() {
   const router = express.Router();
 
-  router.post("/create", createPixController(db));
+  router.post("/create", createPixController());
   router.get("/status/:id", getPixStatusController);
-  router.post("/webhook", mercadoPagoWebhook(db));
 
   return router;
 }

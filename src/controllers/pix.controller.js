@@ -1,19 +1,15 @@
 import { createPix, getPixStatus } from "../services/pix.service.js";
 
-export function createPixController(db) {
+export function createPixController() {
   return async (req, res) => {
     try {
       const { valor, descricao } = req.body;
 
-      const data = await createPix(valor, descricao);
+      if (!valor) {
+        return res.status(400).json({ error: "Valor é obrigatório" });
+      }
 
-      await db.run(
-        `
-        INSERT INTO pagamentos (id, valor, descricao, status, criado_em)
-        VALUES (?, ?, ?, ?, datetime('now'))
-      `,
-        [data.id, valor, descricao, data.status]
-      );
+      const data = await createPix(valor, descricao);
 
       res.json({
         id: data.id,
@@ -23,8 +19,11 @@ export function createPixController(db) {
         status: data.status
       });
     } catch (error) {
-      console.error(error.message);
-      res.status(500).json({ error: "Erro ao criar Pix" });
+      console.error(error.response?.data || error.message);
+      res.status(500).json({
+        error: "Erro ao criar Pix",
+        details: error.response?.data || error.message
+      });
     }
   };
 }
@@ -42,6 +41,8 @@ export async function getPixStatusController(req, res) {
       valor: data.transaction_amount
     });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(400).json({
+      error: error.message
+    });
   }
 }
